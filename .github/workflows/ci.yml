@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: test
+        run: cargo test --all
+
+  # -----------------------------------------------------------------------
+  # SDK regeneration job — runs whenever a new contract WASM artifact is
+  # uploaded from the contracts repo.
+  # -----------------------------------------------------------------------
+  regenerate-sdks:
+    runs-on: ubuntu-latest
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build CLI
+        run: cargo build --release -p lumenlens
+
+      - name: Download latest contract WASMs
+        # In a real setup, download from a release artifact or IPFS/Stellar network.
+        run: echo "Placeholder — wire up WASM download here"
+
+      - name: Generate TypeScript SDK
+        run: ./target/release/lumenlens generate --wasm path/to/contract.wasm --language typescript --output ./out/ts
+
+      - name: Generate Python SDK
+        run: ./target/release/lumenlens generate --wasm path/to/contract.wasm --language python --output ./out/py
+
+      - name: Upload SDK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-sdks
+          path: out/

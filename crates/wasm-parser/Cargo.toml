@@ -1,0 +1,13 @@
+[package]
+name = "wasm-parser"
+version = "0.1.0"
+edition = "2021"
+description = "Reads Soroban contract interface metadata from a WASM binary."
+
+[dependencies]
+anyhow     = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+wasmparser = { workspace = true }
+stellar-xdr = { workspace = true }
+tracing    = { workspace = true }

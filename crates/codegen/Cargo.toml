@@ -1,0 +1,13 @@
+[package]
+name = "codegen"
+version = "0.1.0"
+edition = "2021"
+description = "Template-driven SDK code generator for multiple target languages."
+
+[dependencies]
+anyhow     = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+tera       = { workspace = true }
+tracing    = { workspace = true }
+wasm-parser = { path = "../wasm-parser" }

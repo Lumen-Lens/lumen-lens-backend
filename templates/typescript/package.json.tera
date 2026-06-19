@@ -1,0 +1,17 @@
+{
+  "name": "@lumenlens/{{ spec.name | lower }}-sdk",
+  "version": "{% if spec.version %}{{ spec.version }}{% else %}0.1.0{% endif %}",
+  "description": "Auto-generated Stellar SDK for {{ spec.name }}",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^12.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

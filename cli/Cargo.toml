@@ -1,0 +1,20 @@
+[package]
+name = "lumenlens"
+version = "0.1.0"
+edition = "2021"
+description = "Lumen Lens CLI — generate typed SDKs from Soroban contract WASMs."
+
+[[bin]]
+name = "lumenlens"
+path = "src/main.rs"
+
+[dependencies]
+anyhow            = { workspace = true }
+clap              = { workspace = true }
+serde_json        = { workspace = true }
+tracing           = { workspace = true }
+tracing-subscriber = { workspace = true }
+wasm-parser       = { path = "../crates/wasm-parser" }
+codegen           = { path = "../crates/codegen" }
+diff              = { path = "../crates/diff" }
+mock-gen          = { path = "../crates/mock-gen" }

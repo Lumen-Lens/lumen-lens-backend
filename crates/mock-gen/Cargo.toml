@@ -1,0 +1,13 @@
+[package]
+name = "mock-gen"
+version = "0.1.0"
+edition = "2021"
+description = "Generates in-memory mock client stubs so frontend teams can develop before the contract is live."
+
+[dependencies]
+anyhow     = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+tracing    = { workspace = true }
+codegen    = { path = "../codegen" }
+wasm-parser = { path = "../wasm-parser" }
