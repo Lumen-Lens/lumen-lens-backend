@@ -27,7 +27,10 @@ pub struct GenerateArgs {
 }
 
 pub fn run(args: GenerateArgs) -> Result<()> {
-    let lang = Language::from_str(&args.language)
+    let lang = args
+        .language
+        .parse::<Language>()
+        .map_err(|e| anyhow::anyhow!(e))
         .with_context(|| format!("Unknown language: {}", args.language))?;
 
     let wasm_bytes = std::fs::read(&args.wasm)
@@ -56,10 +59,6 @@ pub fn run(args: GenerateArgs) -> Result<()> {
     let sdk = codegen::render(&spec, &opts)?;
     sdk.write_to_disk(&args.output)?;
 
-    println!(
-        "✅  Generated {} SDK → {}",
-        lang,
-        args.output.display()
-    );
+    println!("✅  Generated {} SDK → {}", lang, args.output.display());
     Ok(())
 }

@@ -2,13 +2,14 @@
 //! renders the full SDK from a [`ContractSpec`].
 
 use anyhow::{Context, Result};
-use serde_json::Value;
-use std::collections::HashMap;
 use tera::Tera;
 use tracing::debug;
 use wasm_parser::ContractSpec;
 
-use crate::{languages::Language, output::{RenderedFile, RenderedSdk}};
+use crate::{
+    languages::Language,
+    output::{RenderedFile, RenderedSdk},
+};
 
 /// Options for a single codegen run.
 #[derive(Debug, Clone)]
@@ -55,15 +56,12 @@ pub fn render(spec: &ContractSpec, opts: &RenderOptions) -> Result<RenderedSdk> 
             continue; // skip partials
         }
 
-        let content = tera.render(name, &context).with_context(|| {
-            format!("Failed to render template '{name}'")
-        })?;
+        let content = tera
+            .render(name, &context)
+            .with_context(|| format!("Failed to render template '{name}'"))?;
 
         // Strip the `.tera` extension to get the output file name.
-        let output_name = name
-            .strip_suffix(".tera")
-            .unwrap_or(name)
-            .to_string();
+        let output_name = name.strip_suffix(".tera").unwrap_or(name).to_string();
 
         files.push(RenderedFile {
             path: std::path::PathBuf::from(output_name),

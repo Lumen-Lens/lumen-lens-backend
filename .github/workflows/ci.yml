@@ -56,10 +56,20 @@ jobs:
         run: echo "Placeholder — wire up WASM download here"
 
       - name: Generate TypeScript SDK
-        run: ./target/release/lumenlens generate --wasm path/to/contract.wasm --language typescript --output ./out/ts
+        run: |
+          if [ -f path/to/contract.wasm ]; then
+            ./target/release/lumenlens generate --wasm path/to/contract.wasm --language typescript --output ./out/ts
+          else
+            echo "No contract WASM available — skipping SDK generation (wire up WASM download first)"
+          fi
 
       - name: Generate Python SDK
-        run: ./target/release/lumenlens generate --wasm path/to/contract.wasm --language python --output ./out/py
+        run: |
+          if [ -f path/to/contract.wasm ]; then
+            ./target/release/lumenlens generate --wasm path/to/contract.wasm --language python --output ./out/py
+          else
+            echo "No contract WASM available — skipping SDK generation (wire up WASM download first)"
+          fi
 
       - name: Upload SDK artifacts
         uses: actions/upload-artifact@v4

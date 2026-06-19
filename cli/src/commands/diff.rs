@@ -27,8 +27,16 @@ pub fn run(args: DiffArgs) -> Result<()> {
     let new_bytes = std::fs::read(&args.new)
         .with_context(|| format!("Cannot read new WASM: {}", args.new.display()))?;
 
-    let old_name = args.old.file_stem().and_then(|s| s.to_str()).unwrap_or("old");
-    let new_name = args.new.file_stem().and_then(|s| s.to_str()).unwrap_or("new");
+    let old_name = args
+        .old
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("old");
+    let new_name = args
+        .new
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("new");
 
     let old_spec = parse_wasm(&old_bytes, old_name)?;
     let new_spec = parse_wasm(&new_bytes, new_name)?;

@@ -27,7 +27,10 @@ pub struct MockArgs {
 }
 
 pub fn run(args: MockArgs) -> Result<()> {
-    let lang = Language::from_str(&args.language)
+    let lang = args
+        .language
+        .parse::<Language>()
+        .map_err(|e| anyhow::anyhow!(e))
         .with_context(|| format!("Unknown language: {}", args.language))?;
 
     let wasm_bytes = std::fs::read(&args.wasm)
@@ -42,6 +45,10 @@ pub fn run(args: MockArgs) -> Result<()> {
     let sdk = mock_gen::generate_mocks(&spec, lang.clone(), args.templates_dir)?;
     sdk.write_to_disk(&args.output)?;
 
-    println!("✅  Generated {} mock client → {}", lang, args.output.display());
+    println!(
+        "✅  Generated {} mock client → {}",
+        lang,
+        args.output.display()
+    );
     Ok(())
 }

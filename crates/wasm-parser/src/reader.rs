@@ -26,7 +26,10 @@ pub fn parse_wasm(wasm_bytes: &[u8], name_hint: &str) -> Result<ContractSpec> {
         if let Payload::CustomSection(reader) = payload {
             match reader.name() {
                 SPEC_SECTION => {
-                    debug!("Found contractspecv0 section ({} bytes)", reader.data().len());
+                    debug!(
+                        "Found contractspecv0 section ({} bytes)",
+                        reader.data().len()
+                    );
                     spec_bytes = Some(reader.data().to_vec());
                 }
                 META_SECTION => {
@@ -37,9 +40,8 @@ pub fn parse_wasm(wasm_bytes: &[u8], name_hint: &str) -> Result<ContractSpec> {
         }
     }
 
-    let spec_bytes = spec_bytes.context(
-        "No `contractspecv0` custom section found — is this a Soroban contract?",
-    )?;
+    let spec_bytes = spec_bytes
+        .context("No `contractspecv0` custom section found — is this a Soroban contract?")?;
 
     let (name, version) = parse_metadata(meta_bytes.as_deref(), name_hint);
     let entries = decode_spec_entries(&spec_bytes)?;
@@ -61,9 +63,9 @@ fn parse_metadata(bytes: Option<&[u8]>, hint: &str) -> (String, Option<String>) 
 
 /// Decode the raw bytes of the `contractspecv0` section into XDR SCSpecEntry
 /// values.  We use stellar-xdr's `Read` trait to consume the stream.
-fn decode_spec_entries(bytes: &[u8]) -> Result<Vec<stellar_xdr::curr::ScSpecEntry>> {
-    use stellar_xdr::curr::{Limited, Limits, ReadXdr, ScSpecEntry};
+fn decode_spec_entries(bytes: &[u8]) -> Result<Vec<stellar_xdr::ScSpecEntry>> {
     use std::io::Cursor;
+    use stellar_xdr::{Limited, Limits, ReadXdr, ScSpecEntry};
 
     let mut entries = Vec::new();
     let mut cursor = Limited::new(Cursor::new(bytes), Limits::none());
@@ -71,7 +73,7 @@ fn decode_spec_entries(bytes: &[u8]) -> Result<Vec<stellar_xdr::curr::ScSpecEntr
     loop {
         match ScSpecEntry::read_xdr(&mut cursor) {
             Ok(entry) => entries.push(entry),
-            Err(stellar_xdr::curr::Error::Io(_)) => break, // EOF
+            Err(stellar_xdr::Error::Io(_)) => break, // EOF
             Err(e) => bail!("XDR decode error: {e}"),
         }
     }
@@ -83,9 +85,9 @@ fn decode_spec_entries(bytes: &[u8]) -> Result<Vec<stellar_xdr::curr::ScSpecEntr
 fn build_ir(
     name: String,
     version: Option<String>,
-    entries: Vec<stellar_xdr::curr::ScSpecEntry>,
+    entries: Vec<stellar_xdr::ScSpecEntry>,
 ) -> Result<ContractSpec> {
-    use stellar_xdr::curr::ScSpecEntry;
+    use stellar_xdr::ScSpecEntry;
 
     let mut functions = Vec::new();
     let mut structs = Vec::new();
@@ -99,6 +101,7 @@ fn build_ir(
             ScSpecEntry::UdtUnionV0(u) => enums.push(convert_union(u)?),
             ScSpecEntry::UdtEnumV0(e) => enums.push(convert_enum(e)?),
             ScSpecEntry::UdtErrorEnumV0(e) => error_enums.push(convert_error_enum(e)?),
+            ScSpecEntry::EventV0(_) => {} // Events are not part of the callable interface; skip.
         }
     }
 
@@ -116,9 +119,7 @@ fn build_ir(
 // Converters — SCSpecEntry subtypes → IR types
 // ---------------------------------------------------------------------------
 
-fn convert_function(f: stellar_xdr::curr::ScSpecFunctionV0) -> Result<FunctionSpec> {
-    use stellar_xdr::curr::StringM;
-
+fn convert_function(f: stellar_xdr::ScSpecFunctionV0) -> Result<FunctionSpec> {
     let name = f.name.to_utf8_string().context("function name UTF-8")?;
     let doc = xdr_doc(&f.doc);
     let inputs = f
@@ -146,7 +147,7 @@ fn convert_function(f: stellar_xdr::curr::ScSpecFunctionV0) -> Result<FunctionSp
     })
 }
 
-fn convert_struct(s: stellar_xdr::curr::ScSpecUdtStructV0) -> Result<StructSpec> {
+fn convert_struct(s: stellar_xdr::ScSpecUdtStructV0) -> Result<StructSpec> {
     let name = s.name.to_utf8_string().context("struct name")?;
     let doc = xdr_doc(&s.doc);
     let fields = s
@@ -163,8 +164,8 @@ fn convert_struct(s: stellar_xdr::curr::ScSpecUdtStructV0) -> Result<StructSpec>
     Ok(StructSpec { name, doc, fields })
 }
 
-fn convert_union(u: stellar_xdr::curr::ScSpecUdtUnionV0) -> Result<EnumSpec> {
-    use stellar_xdr::curr::ScSpecUdtUnionCaseV0;
+fn convert_union(u: stellar_xdr::ScSpecUdtUnionV0) -> Result<EnumSpec> {
+    use stellar_xdr::ScSpecUdtUnionCaseV0;
 
     let name = u.name.to_utf8_string().context("union name")?;
     let doc = xdr_doc(&u.doc);
@@ -188,7 +189,7 @@ fn convert_union(u: stellar_xdr::curr::ScSpecUdtUnionV0) -> Result<EnumSpec> {
     Ok(EnumSpec { name, doc, cases })
 }
 
-fn convert_enum(e: stellar_xdr::curr::ScSpecUdtEnumV0) -> Result<EnumSpec> {
+fn convert_enum(e: stellar_xdr::ScSpecUdtEnumV0) -> Result<EnumSpec> {
     let name = e.name.to_utf8_string().context("enum name")?;
     let doc = xdr_doc(&e.doc);
     let cases = e
@@ -205,7 +206,7 @@ fn convert_enum(e: stellar_xdr::curr::ScSpecUdtEnumV0) -> Result<EnumSpec> {
     Ok(EnumSpec { name, doc, cases })
 }
 
-fn convert_error_enum(e: stellar_xdr::curr::ScSpecUdtErrorEnumV0) -> Result<ErrorEnumSpec> {
+fn convert_error_enum(e: stellar_xdr::ScSpecUdtErrorEnumV0) -> Result<ErrorEnumSpec> {
     let name = e.name.to_utf8_string().context("error enum name")?;
     let doc = xdr_doc(&e.doc);
     let cases = e
@@ -222,14 +223,16 @@ fn convert_error_enum(e: stellar_xdr::curr::ScSpecUdtErrorEnumV0) -> Result<Erro
     Ok(ErrorEnumSpec { name, doc, cases })
 }
 
-fn convert_type(t: &stellar_xdr::curr::ScSpecTypeDef) -> Result<TypeSpec> {
-    use stellar_xdr::curr::ScSpecTypeDef as T;
+fn convert_type(t: &stellar_xdr::ScSpecTypeDef) -> Result<TypeSpec> {
+    use stellar_xdr::ScSpecTypeDef as T;
 
     Ok(match t {
         T::Val => TypeSpec::Unknown { raw: "Val".into() },
         T::Bool => TypeSpec::Bool,
         T::Void => TypeSpec::Void,
-        T::Error => TypeSpec::Unknown { raw: "Error".into() },
+        T::Error => TypeSpec::Unknown {
+            raw: "Error".into(),
+        },
         T::U32 => TypeSpec::U32,
         T::I32 => TypeSpec::I32,
         T::U64 => TypeSpec::U64,
@@ -268,7 +271,11 @@ fn convert_type(t: &stellar_xdr::curr::ScSpecTypeDef) -> Result<TypeSpec> {
     })
 }
 
-fn xdr_doc(doc: &stellar_xdr::curr::StringM<1024>) -> Option<String> {
+fn xdr_doc(doc: &stellar_xdr::StringM<1024>) -> Option<String> {
     let s = doc.to_utf8_string().unwrap_or_default();
-    if s.is_empty() { None } else { Some(s) }
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
+    }
 }

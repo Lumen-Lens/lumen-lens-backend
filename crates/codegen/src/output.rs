@@ -1,7 +1,7 @@
 //! Types representing a rendered SDK ready to write to disk.
 
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// A single generated file.
 #[derive(Debug, Clone, Serialize, Deserialize)]

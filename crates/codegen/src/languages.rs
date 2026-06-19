@@ -1,7 +1,8 @@
 //! Supported target languages and their template/output configuration.
 
-use std::fmt;
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -32,15 +33,18 @@ impl Language {
             Self::Dart => "dart",
         }
     }
+}
 
-    /// Parse from a CLI-style string (case-insensitive).
-    pub fn from_str(s: &str) -> Option<Self> {
+impl FromStr for Language {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "typescript" | "ts" => Some(Self::TypeScript),
-            "go" => Some(Self::Go),
-            "python" | "py" => Some(Self::Python),
-            "dart" => Some(Self::Dart),
-            _ => None,
+            "typescript" | "ts" => Ok(Self::TypeScript),
+            "go" => Ok(Self::Go),
+            "python" | "py" => Ok(Self::Python),
+            "dart" => Ok(Self::Dart),
+            other => Err(format!("unknown language: {other}")),
         }
     }
 }
