@@ -1,9 +1,6 @@
 # lumen-lens-backend
-<<<<<<< HEAD
-Rust engine for Lumen Lens — parses Soroban contract WASM binaries, decodes the embedded XDR interface spec, and generates typed client SDKs in TypeScript, Go, Python, and Dart via a Tera template engine. Includes breaking-change diffing, mock-client generation, and a CLI.
-=======
 
-The Rust engine behind Lumen Lens — parses Soroban WASM specs and generates idiomatic SDKs.
+Rust engine for Lumen Lens — parses Soroban contract WASM binaries, decodes the embedded XDR interface spec, and generates typed client SDKs in TypeScript, Go, Python, and Dart via a Tera template engine. Includes breaking-change diffing, mock-client generation, and a CLI.
 
 ## Workspace crates
 
@@ -54,4 +51,3 @@ Templates live in `templates/<language>/`. Each `.tera` file produces one output
 cargo test --all
 cargo clippy --all-targets
 ```
->>>>>>> e72a85e (chore: Initial commit)
